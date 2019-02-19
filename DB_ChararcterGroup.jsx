@@ -35,7 +35,7 @@ function getCompIndex(compName){
 
 // Receives an array of comps, returns an array of Null layers that have been created
 // by DB_CharacterGroups
-function getCharNulls(comps){
+function getAllCharNulls(comps){
   var charNulls=[];
   for (var c=0; c < comps.length; c++){
     var searchComp = comps[c];
@@ -103,7 +103,7 @@ function refreshUI(){
   //Clear the drop down list
   characterList.removeAll();
   //Search for all character nulls in the project
-  var charactersFound = getCharNulls(getComps(app.project));
+  var charactersFound = getAllCharNulls(getComps(app.project));
   //Iterate those nulls and add them to the drop down list.
   for (var i=0; i < charactersFound.length; i++){
     characterList.add("item", charactersFound[i]);
@@ -180,7 +180,7 @@ function createCGObject(cgName,props,targetComp){
 function createCGNull(cgName,props,targetComp){
   var checkIfExists = false;
   // Build list of existing character nulls
-  var existingCharacterNulls = getCharNulls(getComps(app.project));
+  var existingCharacterNulls = getAllCharNulls(getComps(app.project));
   // If any of those arrays are the same name as the character we are creating
   // set flag to true
   for (var i=0; i<=existingCharacterNulls.length; i++){
@@ -466,7 +466,38 @@ function keyNavPrev(cgName){
   return(cgName);
 }
 
-// Returns the layer and comp objects associated with a given character group.
+// Selects all keys near current time indicator for a given character group
+function selectKeys(cgName){
+  try{
+    if(cgName.properties.length>0){
+      var compName = cgName.comp;
+      var compIndex = getCompIndex(compName);
+      var currentTime = app.project.item(compIndex).time;
+      for (var i=0; i < cgName.properties.length; i++){
+        var prop = cgName.properties[i];
+        // Find the index of the keyframe closest to the current time.
+        var nearestIndex = eval("app.project.item(" + compIndex +")." + buildSinglePropString(prop) + ".nearestKeyIndex(" + currentTime +")");
+        // Get the time of that key
+        var keyTime = eval("app.project.item(" + compIndex +")." + buildSinglePropString(prop) + ".setSelectedAtKey(" + nearestIndex +",true)");
+        // How far away from the current time is thta key?
+        var distToKey = Math.abs(currentTime-keyTime);
+        // If its less that .005 seconds away
+        if (distToKey < .005){
+          // Select it
+          alert(distToKey);
+          eval("app.project.item(" + compIndex +")." + buildSinglePropString(prop) + ".keySelected(" + nearestIndex +")");
+        }
+      }
+    } else {
+      throw new Error("This character group has no properties.");
+    }
+  }
+  catch(err){
+    alert("Remove keys failed: "+err.toString());
+  }
+}
+
+// Returns the layer and comp objects associated with a given character group
 function getCharNull(cgName){
   // Get all comps in project
   var comps = getComps(app.project)
@@ -495,16 +526,24 @@ function goToCharNull(cgName){
   destComp.openInViewer();
 }
 
+// Selects all props in a character group
+function selectAllProps(cgName){
+  var props = eval(cgName + ".properties");
+  for (var i=0; i < props.length; i++){
+    props[i].selected = true;
+  }
+}
+
 // Clears any selected properties in a given comp
 function deselectAllProps(targetComp){
   for(var i=0; i < targetComp.selectedProperties.length; i++){
-    targetComp.selectedProperties[i].selected = false;
+    prop = targetComp.selectedProperties[i];
+    prop.selected = false;
   }
 }
 
 // For Debugging.
 function propList(cgName){
-
   charNull = getCharNull(cgName)[0];
   var res = charNull.comment.split("****");
   if(res[0]==="DBCG"){
@@ -518,10 +557,9 @@ function propList(cgName){
     objectPropNames.push(objectProps[i].name);
   }
   alert(objectPropNames);
-
 }
 
-// Checks if the Alt key is pressed. 
+// Checks if the Alt key is pressed.
 function altState(){
   var ks = ScriptUI.environment.keyboardState;
   if(ks.altKey==true){
@@ -546,13 +584,13 @@ var resString =
     grp_keys:Group{orientation:'row',\
       btn_keyPrev:Button{text:'<',preferredSize:[25,25]},\
       btn_keySub:Button{text:'-',preferredSize:[25,25]},\
-      lbl_key:StaticText{text:'Key',preferredSize:[65,25],justify:'center'},\
+      btn_keySel:Button{text:'Keys',preferredSize:[70,25],justify:'center'},\
       btn_keyAdd:Button{text:'+',preferredSize:[25,25]},\
       btn_keyNext:Button{text:'>',preferredSize:[25,25]},\
     },\
     grp_props:Group{orientation:'row',\
       btn_propSub:Button{text:'-',preferredSize:[25,25]},\
-      lbl_prop:StaticText{text:'Property',preferredSize:[65,25],justify:'center'},\
+      btn_propSel:Button{text:'Properties',preferredSize:[70,25],justify:'center'},\
       btn_propAdd:Button{text:'+',preferredSize:[25,25]},\
     },\
   },\
@@ -610,6 +648,7 @@ dbcgUI.pnl_main.grp_keys.btn_keyAdd.onClick=function(){addKeyToCharacter(eval(db
 dbcgUI.pnl_main.grp_keys.btn_keySub.onClick=function(){removeKeyFromCharacter(eval(dbcgUI.pnl_main.grp_characterSelect.dwn_charSelect.selection.text))};
 dbcgUI.pnl_main.grp_keys.btn_keyNext.onClick=function(){keyNavNext(eval(dbcgUI.pnl_main.grp_characterSelect.dwn_charSelect.selection.text))};
 dbcgUI.pnl_main.grp_keys.btn_keyPrev.onClick=function(){keyNavPrev(eval(dbcgUI.pnl_main.grp_characterSelect.dwn_charSelect.selection.text))};
+dbcgUI.pnl_main.grp_keys.btn_keySel.onClick=function(){selectKeys(eval(dbcgUI.pnl_main.grp_characterSelect.dwn_charSelect.selection.text))};
 dbcgUI.pnl_main.grp_props.btn_propAdd.onClick=function(){
   init();
   addProps(dbcgUI.pnl_main.grp_characterSelect.dwn_charSelect.selection.text,selProps);
@@ -618,5 +657,6 @@ dbcgUI.pnl_main.grp_props.btn_propSub.onClick=function(){
   init();
   rmProps(dbcgUI.pnl_main.grp_characterSelect.dwn_charSelect.selection.text,selProps);
 };
+dbcgUI.pnl_main.grp_props.btn_propSel.onClick=function(){selectAllProps(dbcgUI.pnl_main.grp_characterSelect.dwn_charSelect.selection.text.toString())}
 
 refreshDBCG();

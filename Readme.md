@@ -33,7 +33,7 @@ The panel is then launched from the Window menu.
 
 
 
-##˜ Usage
+## Usage
 At the top of the panel is a drop down list of all character nulls in the project.
 Use this menu to choose which character null you are acting on. To navigate to
 the composition containing a null, choose it in the drop down and click the GO button.
@@ -60,6 +60,13 @@ The Keys section consists of 5 buttons:
 The Properties section consists of 3 buttons:
   * The + and - buttons add and remove properties to the character respectively.
   * The PROPS button selects all of the properties associated with the character.
+
+
+## Limitations
+ 1. Currently, if a layer containing a property group member is renamed, it will
+    no longer be considered a member of the group. The current work around is to
+    remove the properties of that layer from the group, rename the layer, then
+    add the properties again. A more robust solution is being explored.
 
 
 ## License
