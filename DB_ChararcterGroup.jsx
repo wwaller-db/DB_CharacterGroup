@@ -384,6 +384,7 @@ function addKeyToCharacter(cgName){
 function removeKeyFromCharacter(cgName){
   try{
     if(cgName.properties.length>0){
+      app.beginUndoGroup("Remove Keys from Character");
       var compName = cgName.comp;
       var compIndex = getCompIndex(compName);
       var currentTime = app.project.item(compIndex).time;
@@ -406,6 +407,7 @@ function removeKeyFromCharacter(cgName){
     }
   }
   catch(err){
+    app.endUndoGroup();
     alert("Remove keys failed: "+err.toString());
   }
 }
