@@ -480,14 +480,16 @@ function selectKeys(cgName){
         // Find the index of the keyframe closest to the current time.
         var nearestIndex = eval("app.project.item(" + compIndex +")." + buildSinglePropString(prop) + ".nearestKeyIndex(" + currentTime +")");
         // Get the time of that key
-        var keyTime = eval("app.project.item(" + compIndex +")." + buildSinglePropString(prop) + ".setSelectedAtKey(" + nearestIndex +",true)");
+        var keyTime = eval("app.project.item(" + compIndex +")." + buildSinglePropString(prop) + ".keyTime(" + nearestIndex +")");
         // How far away from the current time is thta key?
         var distToKey = Math.abs(currentTime-keyTime);
         // If its less that .005 seconds away
         if (distToKey < .005){
           // Select it
-          alert(distToKey);
-          eval("app.project.item(" + compIndex +")." + buildSinglePropString(prop) + ".keySelected(" + nearestIndex +")");
+          //alert(distToKey);
+          eval("app.project.item(" + compIndex +")." + buildSinglePropString(prop) + ".setSelectedAtKey(" + nearestIndex +",true)");
+        } else{
+          eval("app.project.item(" + compIndex +")." + buildSinglePropString(prop) + ".setSelectedAtKey(" + nearestIndex +",false)");
         }
       }
     } else {
