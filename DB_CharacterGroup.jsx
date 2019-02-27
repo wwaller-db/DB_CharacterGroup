@@ -171,6 +171,7 @@ function createCGObject(cgName,props,targetComp){
   if (typeof cgName != "object"){
     newCG = eval(cgName+"={properties:[]}");
     newCG.comp = targetComp.name;
+    newCG.name = cgName.toString();
     addPropsToCGObject(newCG, props);
   }
 }
@@ -305,18 +306,21 @@ function rmPropsFromCGObject(cgName,propsToRemove){
 // Function called by the remove props button. Calls remove props from object and refreshes
 // the associated null's DBCG comment.
 function rmProps(cgName, propsToRemove){
-  try{
-    app.beginUndoGroup("Remove Properties from Group");
-    rmPropsFromCGObject(eval(cgName),propsToRemove);
-    var targetNull = getCharNull(cgName)[0];
-    refreshNullComment(targetNull);
-  }
-  catch(err){
-    alert("Remove Properties failed: "+err.toString());
-  }
-  finally {
-    refreshDBCG();
-    app.endUndoGroup();
+  nm = cgName.toString();
+  if (confirm("Remove selected properties from "+nm)){
+    try{
+      app.beginUndoGroup("Remove Properties from Group");
+      rmPropsFromCGObject(eval(cgName),propsToRemove);
+      var targetNull = getCharNull(cgName)[0];
+      refreshNullComment(targetNull);
+    }
+    catch(err){
+      alert("Remove Properties failed: "+err.toString());
+    }
+    finally {
+      refreshDBCG();
+      app.endUndoGroup();
+    }
   }
 }
 
@@ -382,33 +386,38 @@ function addKeyToCharacter(cgName){
 
 // Removes key frames from every property in a character at the comps current time
 function removeKeyFromCharacter(cgName){
-  try{
-    if(cgName.properties.length>0){
-      app.beginUndoGroup("Remove Keys from Character");
-      var compName = cgName.comp;
-      var compIndex = getCompIndex(compName);
-      var currentTime = app.project.item(compIndex).time;
-      for (var i=0; i < cgName.properties.length; i++){
-        var prop = cgName.properties[i];
-        // Find the index of the keyframe closest to the current time.
-        var nearestIndex = eval("app.project.item(" + compIndex +")." + buildSinglePropString(prop) + ".nearestKeyIndex(" + currentTime +")");
-        // Get the time of that key
-        var keyTime = eval("app.project.item(" + compIndex +")." + buildSinglePropString(prop) + ".keyTime(" + nearestIndex +")");
-        // How far away from the current time is thta key?
-        var distToKey = Math.abs(currentTime-keyTime);
-        // If its less that .005 seconds away
-        if (distToKey < .005){
-          // Delete it
-          eval("app.project.item(" + compIndex +")." + buildSinglePropString(prop) + ".removeKey(" + nearestIndex +")");
+  nm=cgName.name;
+  if (confirm("Remove keys at from "+nm)){
+    try{
+      if(cgName.properties.length>0){
+        app.beginUndoGroup("Remove Keys from Character");
+        var compName = cgName.comp;
+        var compIndex = getCompIndex(compName);
+        var currentTime = app.project.item(compIndex).time;
+        for (var i=0; i < cgName.properties.length; i++){
+          var prop = cgName.properties[i];
+          // Find the index of the keyframe closest to the current time.
+          var nearestIndex = eval("app.project.item(" + compIndex +")." + buildSinglePropString(prop) + ".nearestKeyIndex(" + currentTime +")");
+          // Get the time of that key
+          var keyTime = eval("app.project.item(" + compIndex +")." + buildSinglePropString(prop) + ".keyTime(" + nearestIndex +")");
+          // How far away from the current time is thta key?
+          var distToKey = Math.abs(currentTime-keyTime);
+          // If its less that .005 seconds away
+          if (distToKey < .005){
+            // Delete it
+            eval("app.project.item(" + compIndex +")." + buildSinglePropString(prop) + ".removeKey(" + nearestIndex +")");
+          }
         }
+      } else {
+        throw new Error("This character group has no properties.");
       }
-    } else {
-      throw new Error("This character group has no properties.");
     }
-  }
-  catch(err){
-    app.endUndoGroup();
-    alert("Remove keys failed: "+err.toString());
+    catch(err){
+      alert("Remove keys failed: "+err.toString());
+    }
+    finally{
+      app.endUndoGroup();
+    }
   }
 }
 
